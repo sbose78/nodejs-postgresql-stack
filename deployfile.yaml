@@ -1,0 +1,40 @@
+schemaVersion: 2.0.0
+metadata:
+  name: nodejs-postgres
+images:
+  - name: nodejs-crud
+    strategy:
+      name: Kaniko
+    Dockerfile: '${STACK_ROOT}/build/Dockerfile'
+
+workloads:
+  dependencies:
+    - description: Mongo DB deployment
+      manifests: 
+        - ${STACK_ROOT}/dependencies/postgres.yaml
+  components:
+    - description: NodeJS App built from source
+      imageRef : nodejs-crud
+      podTemplate:
+        containers:
+          - env:
+              - name: DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: database-secret
+                    key: user
+              - name: DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: database-secret
+                    key: password
+            readinessProbe:
+              httpGet: ""
+              path: /api/health/readiness
+              port: 8080
+              scheme: HTTP 
+            livenessProbe:
+              httpGet: ""
+              path: /api/health/liveness
+              port: 8080
+              scheme: HTTP
